@@ -1,0 +1,64 @@
+{
+  "name": "Admin-Patnubay-at-Sanggunian-Center-for-BulSU-Bustos",
+  "version": "0.1.0",
+  "private": true,
+  "dependencies": {
+    "@date-io/date-fns": "^2.13.1",
+    "@date-io/dayjs": "^2.14.0",
+    "@emotion/react": "^11.9.0",
+    "@emotion/styled": "^11.8.1",
+    "@faker-js/faker": "^6.1.2",
+    "@iconify/react": "^3.2.1",
+    "@mui/icons-material": "^5.10.6",
+    "@mui/lab": "^5.0.0-alpha.69",
+    "@mui/material": "^5.4.2",
+    "@mui/utils": "^5.6.1",
+    "@testing-library/jest-dom": "^5.16.4",
+    "@testing-library/react": "^13.1.1",
+    "@testing-library/user-event": "^13.5.0",
+    "apexcharts": "^3.33.0",
+    "change-case": "^4.1.2",
+    "date-fns": "^2.28.0",
+    "dayjs": "^1.11.2",
+    "firebase": "^9.6.11",
+    "formik": "^2.2.9",
+    "lodash": "^4.17.21",
+    "react": "^18.0.0",
+    "react-apexcharts": "^1.3.9",
+    "react-dom": "^18.0.0",
+    "react-dropzone": "^12.0.5",
+    "react-redux": "^8.0.0",
+    "react-router-dom": "^5.2.0",
+    "react-scripts": "5.0.1",
+    "redux": "^4.1.2",
+    "redux-devtools-extension": "^2.13.9",
+    "redux-thunk": "^2.4.1",
+    "simplebar-react": "^2.4.1",
+    "web-vitals": "^2.1.4",
+    "yup": "^0.32.11"
+  },
+  "scripts": {
+    "start": "react-scripts start",
+    "build": "react-scripts build",
+    "test": "react-scripts test",
+    "eject": "react-scripts eject"
+  },
+  "eslintConfig": {
+    "extends": [
+      "react-app",
+      "react-app/jest"
+    ]
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  }
+}
