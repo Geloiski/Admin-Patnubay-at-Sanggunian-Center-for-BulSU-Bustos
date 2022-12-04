@@ -1,5 +1,5 @@
-import React,{ useEffect } from "react";
-import { Link as RouterLink,useHistory, useLocation } from "react-router-dom";
+import React, { useEffect, useState } from "react";
+import { Link as RouterLink, useHistory, useLocation } from "react-router-dom";
 import {
   Container,
   Avatar,
@@ -16,7 +16,7 @@ import {
 import SendIcon from '@mui/icons-material/Send';
 import { useSelector } from "react-redux";
 
-import { auth, db } from "../../utils/firebase";
+import { auth, db, storage } from "../../utils/firebase";
 import {
   setDoc,
   serverTimestamp,
@@ -29,218 +29,116 @@ import {
   query,
   onSnapshot,
   orderBy,
+  getDoc,
+  Timestamp,
 } from "firebase/firestore";
 
 import { formatDistance, subDays } from 'date-fns'
-
-const AdminUi = {
-  overflowWrap: "break-word",
-  wordWrap: "break-word",
-  hyphens: "auto",
-  maxWidth: "500px",
-  minWidth: "400px",
-  p: 2,
-  ml:2,
-  color: "gray",
-  border: 1,
-  borderTopLeftRadius: 10,
-  borderTopRightRadius: 0,
-  borderBottomLeftRadius: 10,
-  borderBottomRightRadius: 10,
-}
-
-const UserUi = {
-    overflowWrap: "break-word",
-                  wordWrap: "break-word",
-                  hyphens: "auto",
-                  maxWidth: "500px",
-                  minWidth: "400px",
-                  p: 2,
-                  color: "gray",
-                  border: 1,
-                  ml: 2,
-                  borderTopLeftRadius: 0,
-                  borderTopRightRadius: 10,
-                  borderBottomLeftRadius: 10,
-                  borderBottomRightRadius: 10,
-                  bgcolor: "primary.main",
-}
+import Message from "./Message";
+import MessageForm from "./MessageForm";
+import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
 
 export default function ChatWindow({ data1, urlId }) {
-  const user = useSelector((state) => state.user);
-  const data = data1.sort((a, b) => b.Created?.seconds - a.Created?.seconds);
 
-  // const useQuery = () => {
-  //   return new URLSearchParams(useLocation().search);
-  // };
-  // let queryy = useQuery();
-  // let urlId = queryy.get("id");
-  
- 
-  
-  const [message, setMessage] = React.useState("");
-const handleSendMessage = async (e) => {
-setMessage("");
-  console.log(message);
-  await addDoc(collection(db, "Chats", urlId,"Chat"), {
-    from: "Admin",
-    message: message,
-    Created: serverTimestamp(),
-  });
+  const [chat, setChat] = useState("");
+  const [text, setText] = useState("");
+  const [img, setImg] = useState("");
+  const [msgs, setMsgs] = useState([]);
 
-}
+  const user1 = auth.currentUser.uid;
+
+  const selectUser = async (user) => {
+    setChat(user);
+
+    const user2 = user.uid;
+    const id = user1 > user2 ? `${user1 + user2}` : `${user2 + user1}`;
+
+    const msgsRef = collection(db, "Chats", id, "Chat");
+    const q = query(msgsRef, orderBy("createdAt", "asc"));
+
+    onSnapshot(q, (querySnapshot) => {
+      let msgs = [];
+      querySnapshot.forEach((doc) => {
+        msgs.push(doc.data());
+      });
+      setMsgs(msgs);
+    });
+
+    // get last message b/w logged in user and selected user
+    const docSnap = await getDoc(doc(db, "lastMsg", id));
+    // if last message exists and message is from selected user
+    if (docSnap.data() && docSnap.data().from !== user1) {
+      // update last message doc, set unread to false
+      await updateDoc(doc(db, "lastMsg", id), { unread: false });
+    }
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    const user2 = chat.uid;
+
+    const id = user1 > user2 ? `${user1 + user2}` : `${user2 + user1}`;
+
+    let url;
+    if (img) {
+      const imgRef = ref(
+        storage,
+        `images/${new Date().getTime()} - ${img.name}`
+      );
+      const snap = await uploadBytes(imgRef, img);
+      const dlUrl = await getDownloadURL(ref(storage, snap.ref.fullPath));
+      url = dlUrl;
+    }
+
+    await addDoc(collection(db, "Chats", id, "Chat"), {
+      text,
+      from: user1,
+      to: user2,
+      createdAt: Timestamp.fromDate(new Date()),
+      media: url || "",
+    });
+
+    await setDoc(doc(db, "lastMsg", id), {
+      text,
+      from: user1,
+      to: user2,
+      createdAt: Timestamp.fromDate(new Date()),
+      media: url || "",
+      unread: true,
+    });
+
+    setText("");
+    setImg("");
+  };
+
 
 
   return (
-    <Box>
-      { urlId !== "1" ? (
-    <Box sx={{p:2}}>
-      {/* User Header */}
-      <Box
-        sx={{
-          display: "flex",
-          alignItems: "center",
-          p: 2,
-          bgcolor: "background.paper",
-        }}
-      >
-        <Avatar src={user.users?.filter((user) => user.id  === urlId).map((user) => user.Image)}
-        sx={{ bgcolor: "primary.main" }}>M</Avatar>
-        <Box sx={{ ml: 1, flexGrow: 1 }}>
-          <Box sx={{ display: "flex", flexDirection: "row" }}>
-            <Typography sx={{ fontSize: 15, fontWeight: "bold" }}>
-            {user.users?.filter((user) => user.id  === urlId).map((user) => user.UserName)}
-            </Typography>
-            <Box sx={{ flexGrow: 1 }} />
-            {/* <Typography variant="caption" sx={{ color: "gray" }}>
-              1m ago
-            </Typography> */}
-          </Box>
-          {/* <Typography sx={{ fontSize: 13, color: "gray" }} noWrap>
-            active now
-          </Typography> */}
-        </Box>
-      </Box>
-      <Divider orientation="horizontal" flexItem />
-
-      {/* Chat Info */}
-      <Box sx={{ p: 1,  maxHeight: 390, overflow: 'auto', display:"flex", flexDirection: "column-reverse" }}>
-      
-      {data.map((item) => (
-        <Box>
-        {/* Student UI **/}
-    <Grid container sx={{my:2}}>
-            <Grid item xs={1} sx={  item.from === "Admin" ? {display:"flex"} : {display:"none"} }>
-              <Box sx={{ display: "flex", flexDirection: "row", }}>
-                <Box sx={{ flexGrow: 1, }} />
-
-                <Avatar 
-                src={
-                  item.from === "Student" ?
-                  user.users?.filter((user) => user.id  === urlId).map((user) => user.Image) :
-                  item.from === "Admin" ?
-                  user.currentUserData[0].Image : null}
-                sx={{ bgcolor: "primary.main", ml: 1 }}>M</Avatar>
-              </Box>
-            </Grid>
-
-            <Grid item xs={11} sx={  item.from === "Admin" ? {display:"block"} : {display:"none"} }>
-              <Typography
-                sx={{ fontSize: 13, color: "gray", textAlign: "left", ml: 2 }}
-                noWrap
-              >
-             
-             { item.Created !== null &&
-               formatDistance(subDays(new Date(), 0), new Date(item.Created?.seconds * 1000))}
-              </Typography>
-              <Box
-                sx={ item.from === "Student" ? AdminUi : UserUi}
-              >
-                <Typography sx={{ fontSize: 13, color: "black" }}>
-               { item.message}
-                </Typography>
-              </Box>
-            </Grid>
-
-            {/* Admin UI **/}
-
-            <Grid item xs={11} sx={  item.from === "Student" ? {display:"block"} : {display:"none"} }>
-              <Typography
-                sx={{ fontSize: 13, color: "gray", textAlign: "right", ml: 2 }}
-                noWrap
-              >
-             
-             { item.Created !== null &&
-               formatDistance(subDays(new Date(), 0), new Date(item.Created?.seconds * 1000))}
-              </Typography>
-              <Box
-                sx={ item.from === "Student" ? AdminUi : UserUi}
-              >
-                <Typography sx={{ fontSize: 13, color: "black" }}>
-               { item.message}
-                </Typography>
-              </Box>
-            </Grid>
-
-            <Grid item xs={1} sx={  item.from === "Student" ? {display:"flex"} : {display:"none"} }>
-              <Box sx={{ display: "flex", flexDirection: "row", }}>
-                <Box sx={{ flexGrow: 1, }} />
-
-                <Avatar 
-                src={
-                  item.from === "Student" ?
-                  user.users?.filter((user) => user.id  === urlId).map((user) => user.Image) :
-                  item.from === "Admin" ?
-                  user.currentUserData[0].Image : null}
-                sx={{ bgcolor: "primary.main", ml: 1 }}>M</Avatar>
-              </Box>
-            </Grid>
-
-          </Grid>
-     
-
-          </Box>
-      ))}
-          
-
-          
-
-         
-      
-      </Box>
-
-      <Box sx={{display:"flex", }}>
-      <FormControl sx={{  mt: 2 }} variant="outlined" fullWidth>
-        <OutlinedInput
-          size="small"
-          value={message}
-          onChange={(e) => setMessage(e.target.value)}
-          placeholder="Type a message"
-        
-        />
-      </FormControl>
-      <IconButton  size="small" sx={{ml:3, mt:2, bgcolor: (theme) => theme.palette.primary.main , borderRadius:1}} onClick={handleSendMessage}>
-        <SendIcon  sx={{fontSize:25, color:"white" }} />
-      </IconButton>
-      </Box>
-    </Box>
+    <div className="messages_container">
+      {chat ? (
+        <>
+          <div className="messages_user">
+            <h3>{chat.name}</h3>
+          </div>
+          <div className="messages">
+            {msgs.length
+              ? msgs.map((msg, i) => (
+                <Message key={i} msg={msg} user1={user1} />
+              ))
+              : null}
+          </div>
+          <MessageForm
+            handleSubmit={handleSubmit}
+            text={text}
+            setText={setText}
+            setImg={setImg}
+            img={img}
+          />
+        </>
       ) : (
-        <Box sx={{p:2,}}>
-        <Box
-          sx={{
-            display: "flex",
-            alignItems: "center",
-            p: 2,
-            bgcolor: "background.paper",
-            height: 550,
-            width: 550,
-            textAlign: "center",
-          }}
-        >
-        <Typography variant="h6" color="initial" sx={{mx:"auto"}}>Select a chat</Typography>
-        </Box>
-        </Box>
+        <h3 className="no_conv">Select a user to start conversation</h3>
       )}
-    </Box>
+    </div>
   );
 }
