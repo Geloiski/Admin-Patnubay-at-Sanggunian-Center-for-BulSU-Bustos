@@ -43,7 +43,7 @@ import {
   arrayUnion,
   deleteField,
 } from "firebase/firestore";
-import { ref, uploadBytes, getDownloadURL,deleteObject } from "firebase/storage";
+import { ref, uploadBytes, getDownloadURL, deleteObject } from "firebase/storage";
 
 import { useSelector } from "react-redux";
 
@@ -60,7 +60,7 @@ const Item = styled(Paper)(({ theme }) => ({
 }));
 
 const thumbPreview = {
-  
+
   display: "inline-flex",
   marginBottom: 8,
   marginRight: 8,
@@ -125,7 +125,7 @@ export default function ClientHomepage() {
   };
 
   const fileRejectionItems = fileRejections.map(({ file, errors }) => (
-    <Box sx={{ my:2, border: 1, borderRadius: 2, p: 2, color: "red" }}>
+    <Box sx={{ my: 2, border: 1, borderRadius: 2, p: 2, color: "red" }}>
       <Typography key={file.path} sx={{ fontSize: 12, fontWeight: 700 }}>
         {file.path} - {(file.size / const_term ** 2).toFixed(3)} Mb
       </Typography>
@@ -149,26 +149,26 @@ export default function ClientHomepage() {
     </Box>
   ));
 
-  const thumbsDefault =  user.themes.map((news,i) => ( 
+  const thumbsDefault = user.themes.map((news, i) => (
     <Box style={thumbPreview} key={i}>
       <Box style={thumbInner}>
         <img src={news.Image} style={img} alt="hahah" />
         <Box>
-          
+
           {/* <ClearRoundedIcon onClick={remove(product.Image[i])} style={style.removeButton} /> */}
         </Box>
       </Box>
-      
-    </Box> ));
+
+    </Box>));
 
   const thumbsEmpty = (
     <Box>
-        <img src={UploadImage} alt="upload" style={style.imgEmpty} />
-        {/* <Typography fontSize={10} color="textPrimary">Upload photo</Typography> */}
-   <Typography fontSize={18} color="textPrimary" fontWeight={700} > Drop or  Select file</Typography>
+      <img src={UploadImage} alt="upload" style={style.imgEmpty} />
+      {/* <Typography fontSize={10} color="textPrimary">Upload photo</Typography> */}
+      <Typography fontSize={18} color="textPrimary" fontWeight={700} > Drop or  Select file</Typography>
     </Box>
   );
-
+    console.log(user)
 
   //yup and formik
 
@@ -177,49 +177,49 @@ export default function ClientHomepage() {
     quote: Yup.string()
       .min(5, "Quote is invalid")
       .required("Quote is required"),
-      announcement: Yup.string()
+    announcement: Yup.string()
       .min(5, "Announcement is invalid")
       .required("Announcement  is required"),
     // date: Yup.string().required("Date  is required"),
   });
 
-  const formik = useFormik ({
+  const formik = useFormik({
     initialValues: {
-      quote: user.themes[0].Quote,
-      announcement: user.themes[0].Announcement,
+      quote: '',
+      announcement: '',
       date: "",
     },
     validationSchema: LoginSchema,
-    onSubmit: async() => {
+    onSubmit: async () => {
 
       if (files.length > 0) {
         setAvatarError(false);
-    
+
         const docRef = await updateDoc(doc(db, "Theme", user.themes[0].id), {
           Quote: formik.values.quote,
           Announcement: formik.values.announcement,
           Created: serverTimestamp()
         });
+
         await Promise.all(
           files.map((image) => {
-           const imageRef = ref(storage, `Theme/${user.themes[0].id}/${image.path}`);
+            const imageRef = ref(storage, `Theme/${user.themes[0].id}/${image.path}`);
             uploadBytes(imageRef, image, "data_url").then(async () => {
               // const downloadURL = await getDownloadURL(imageRef);
               // await updateDoc(doc(db, "Theme", docRef.id), {
               //   Image: arrayUnion(downloadURL),
               //   ImageName: image.path,
               // });
-
               const downloadURL = await getDownloadURL(imageRef);
               await updateDoc(doc(db, "Theme", user.themes[0].id), {
                 Image: deleteField(),
                 ImageName: image.path,
-            })
-            await deleteObject(ref (storage, `Theme/${user.themes[0].id}/${ user.themes[0].ImageName}`));
+              })
+              await deleteObject(ref(storage, `Theme/${user.themes[0].id}/${user.themes[0].ImageName}`));
               await updateDoc(doc(db, "Theme", user.themes[0].id), {
                 Image: arrayUnion(downloadURL),
               });
-            }); 
+            });
             return true;
           })
         );
@@ -230,16 +230,16 @@ export default function ClientHomepage() {
           Created: serverTimestamp(),
         });
 
-          resetForm({
-            values: {
-              quote: "",
-              announcement: "",
-            }
-          })
-          // setFieldValue("date", "");
+        resetForm({
+          values: {
+            quote: "",
+            announcement: "",
+          }
+        })
+        // setFieldValue("date", "");
         setSnackbarOpen(true);
         setFiles([]);
-          
+
       } else if (files.length === 0) {
         const docRef = await updateDoc(doc(db, "Theme", user.themes[0].id), {
           Quote: formik.values.quote,
@@ -252,7 +252,7 @@ export default function ClientHomepage() {
         setSubmitting(false);
       }
 
-      console.log("formik",formik.values.stock);
+      console.log("formik", formik.values.stock);
     },
   });
   // console.log("files", files);
@@ -264,7 +264,7 @@ export default function ClientHomepage() {
     isSubmitting,
     handleSubmit,
     getFieldProps,
-     setFieldValue,
+    setFieldValue,
     setSubmitting,
     // getFieldMeta,
     resetForm,
@@ -323,20 +323,19 @@ export default function ClientHomepage() {
             </Breadcrumbs> */}
           </Box>
         </Stack>
-
         <FormikProvider value={formik}>
           <Form autoComplete="off" noValidate onSubmit={handleSubmit}>
             <Grid container spacing={3}>
               <Grid item xs={12} md={12}>
                 <Item>
-                  
-                <Typography
+
+                  <Typography
                     variant="body2"
                     sx={{ mb: 1, mt: 2, textAlign: "left", fontWeight: 700 }}
                   >
-                   Quote of the day
+                    Quote of the day
                   </Typography>
-                <OutlinedInput
+                  <OutlinedInput
                     fullWidth
                     placeholder="Say something"
                     rows={8}
@@ -394,25 +393,19 @@ export default function ClientHomepage() {
                         Allowed *.jpeg, *.jpg, *.png, max 1 file and size of
                         3.1 MB
                       </Typography>
-                     
 
-                     
+
+
                     </Box>
                   </Box>
                   {fileRejectionItems}
                   <Box style={style.thumbsContainer}>
-                    <Box sx={{ m: 1, position: "relative" }}>{files.length === 0 ? thumbsDefault : thumbs }</Box>
+                    <Box sx={{ m: 1, position: "relative" }}>{files.length === 0 ? thumbsDefault : thumbs}</Box>
                   </Box>
                 </Item>
               </Grid>
 
               <Grid item xs={12} md={12}>
-              
-
-               
-
-              
-
                 <Box
                   sx={{
                     display: "flex",
